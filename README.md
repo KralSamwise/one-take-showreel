@@ -30,3 +30,7 @@ Run `npm test` for scaffolding/refusal tests. See `examples/` for the rendered d
 Clone this repository into your agent's skills directory under the repository name, or ask your agent to read the root `SKILL.md` directly. This is an agent instruction package plus local scripts, not a hosted service. Review scripts before running them. Do not copy credentials or private footage into a public fork.
 
 No metered model API is required by these scripts. Your coding agent and optional rendering tools have their own requirements. Tested locally on macOS; Windows/Linux have not yet been verified.
+
+## Companion resource
+
+[Download the three-skill field guide](docs/field-guide.pdf) · [Copy the reproduction prompts](docs/copyable-prompts.txt)

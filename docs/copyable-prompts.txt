@@ -1,0 +1,11 @@
+One-Take Showreel
+Read SKILL.md. Scaffold the FORM demo at 15 seconds vertical, render it locally, inspect the final output, and show me the review video and editable files. Keep it silent and label it as a demonstration brand.
+https://github.com/KralSamwise/one-take-showreel
+
+Edit Style Memory
+Read SKILL.md. Run the synthetic reference example, then the approved-feedback example. Show the resulting profile and the preferences resolved for demo-brand. Also resolve a different project to demonstrate that the settings do not leak across scopes.
+https://github.com/KralSamwise/edit-style-memory
+
+Render Review
+Read SKILL.md. Run the included synthetic integration test, then create an evidence pack for my exported video. Inspect every contact page and transition strip. Report timestamped findings. Keep motion and audio marked not-reviewed unless you actually play and listen.
+https://github.com/KralSamwise/render-review
