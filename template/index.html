@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>One-Take Template — hello</title>
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("assets/fonts/Geist.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Geist Mono";
+        src: url("assets/fonts/Geist-Mono.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      :root {
+        --bg: #111316;
+        --bg-deep: #0a0b0d;
+        --surface: #1a1d22;
+        --surface-2: #22262c;
+        --line: #2e343c;
+        --ink: #e9ecf0;
+        --ink-soft: #aab2be;
+        --ink-faint: #838c99;
+        --accent: #6ea8ff;
+        --accent-2: #8fd0c4;
+        /* Backdrop world (references/engine.md "Backdrop"). Everything derives from the brand's OWN
+           tokens above (--bg = its dark surface, or its light surface for a light brand; --accent /
+           --accent-2 = the two glows). Set the treatment here; override any colour only if the brand
+           needs it. Options: dots stars topo blueprint paper aurora halftone. Not warm unless the brand is.
+           Optional overrides (add a line each): --atmos-bg, --atmos-glow, --atmos-glow2, --atmos-grid,
+           --atmos-gridAlpha, --atmos-vignette, --atmos-mode (dark|light). */
+        --atmos-treatment: dots;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+      #root {
+        position: relative; width: 100%; height: 100%; overflow: hidden;
+        background: var(--bg); color: var(--ink);
+        font-family: "Geist", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .mono { font-family: "Geist Mono", monospace; }
+      #stage { position: absolute; inset: 0; overflow: hidden; }
+
+      /* ---------- screen-space backdrop ---------- */
+      #bg {
+        position: absolute; inset: 0;
+        background: radial-gradient(120% 95% at 50% 46%, #16181c 0%, #111316 46%, #08090a 100%); /* neutral fallback; ot-backdrop.js replaces it from the brand tokens */
+      }
+      .glow {
+        position: absolute; left: 0; top: 0; width: 1200px; height: 1200px; margin: -600px 0 0 -600px;
+        border-radius: 50%; will-change: transform, opacity;
+      }
+      #glow1 { background: radial-gradient(circle, rgba(143, 160, 184, 0.3) 0%, rgba(143, 160, 184, 0.14) 32%, rgba(143, 160, 184, 0.04) 55%, rgba(17, 19, 22, 0) 72%); }
+      #glow2 { width: 820px; height: 820px; margin: -410px 0 0 -410px; background: radial-gradient(circle, rgba(107, 122, 143, 0.16) 0%, rgba(107, 122, 143, 0.06) 40%, rgba(17, 19, 22, 0) 70%); }
+      #bokeh { position: absolute; inset: 0; overflow: hidden; }
+      #bokeh i { position: absolute; left: 0; top: 0; border-radius: 50%; will-change: transform, opacity; }
+
+      /* ---------- world (camera) ---------- */
+      #world { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; will-change: transform; }
+      #dots {
+        position: absolute; left: -1400px; top: -1400px; width: 7600px; height: 3900px;
+        background-image: radial-gradient(circle, rgba(170, 178, 190, 0.24) 1.7px, rgba(170, 178, 190, 0) 2.4px);
+        background-size: 48px 48px;
+      }
+      #brandWorld { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+      #heroToken { position: absolute; left: 0; top: 0; width: 130px; height: 130px; margin: -65px 0 0 -65px; transform-origin: 50% 50%; }
+      #heroToken svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+      /* ---------- screen-space FX + HUD ---------- */
+      #fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      #bokehFront { position: absolute; inset: 0; overflow: hidden; }
+      #vignette { position: absolute; inset: 0; background: radial-gradient(115% 100% at 50% 50%, rgba(5, 6, 7, 0) 55%, rgba(5, 6, 7, 0.52) 100%); }
+
+      #hud { position: absolute; inset: 0; font-family: "Geist Mono", monospace; }
+      .corner { position: absolute; width: 40px; height: 40px; border-style: solid; border-color: rgba(233, 236, 240, 0.32); border-width: 0; }
+      .c-tl { border-left-width: 3px; border-top-width: 3px; }
+      .c-tr { border-right-width: 3px; border-top-width: 3px; }
+      .c-bl { border-left-width: 3px; border-bottom-width: 3px; }
+      .c-br { border-right-width: 3px; border-bottom-width: 3px; }
+      #hudBrand { position: absolute; font-size: 17px; letter-spacing: 0.2em; color: var(--ink-soft); white-space: nowrap; }
+      #hudBrand b { color: var(--ink); font-weight: 700; }
+      #hudBrand i { font-style: normal; color: var(--ink-faint); }
+      #timecode { position: absolute; font-size: 17px; letter-spacing: 0.12em; color: var(--ink-soft); display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+      #rec { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 10px var(--accent-2); }
+      #meter { position: absolute; font-size: 16px; letter-spacing: 0.14em; color: var(--ink-soft); white-space: nowrap; }
+      #captions { position: absolute; }
+      .cap { position: absolute; left: 0; bottom: 0; white-space: nowrap; }
+      .cap small { display: block; font-family: "Geist Mono", monospace; font-size: 16px; letter-spacing: 0.18em; color: var(--accent-2); margin-bottom: 8px; opacity: 0; }
+      .cap .ln { display: block; overflow: hidden; height: 44px; }
+      .cap .ln span { display: block; font-family: "Geist", sans-serif; font-size: 36px; font-weight: 600; letter-spacing: -0.02em; line-height: 44px; color: var(--ink); }
+
+      /* ---------- lockup (screen space, outside #world) ---------- */
+      #lockup { position: absolute; inset: 0; }
+      #mark { position: absolute; }
+      #mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
+      #wmClip { position: absolute; overflow: hidden; }
+      /* height:auto, never a % of #wmClip: setup() measures #wordmark before #wmClip has a size, and a
+         % height on an absolutely positioned box resolves to 0 there, so every letter would clip.
+         acts.js sizes #wmClip FROM this box's natural height. */
+      #wordmark { position: absolute; left: 0; top: 0; height: auto; display: flex; align-items: center; white-space: nowrap; font-size: 84px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink); }
+      #wordmark span { display: inline-block; }
+      #tagline { position: absolute; text-align: center; white-space: nowrap; font-size: 34px; letter-spacing: -0.02em; }
+      #tag0 { font-weight: 500; color: var(--ink); }
+      #tag1 { font-weight: 700; color: var(--accent); margin-left: 12px; }
+      #url { position: absolute; text-align: center; white-space: nowrap; font-family: "Geist Mono", monospace; font-size: 20px; letter-spacing: 0.18em; color: var(--ink-soft); }
+
+      #grain {
+        position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; opacity: 0.06; mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-width="1920" data-height="1080" data-duration="15" data-fps="30">
+      <div id="stage">
+        <div id="bg"></div>
+        <div id="glow1" class="glow"></div>
+        <div id="glow2" class="glow"></div>
+        <div id="bokeh"></div>
+
+        <div id="world">
+          <div id="dots"></div>
+          <div id="brandWorld">
+            <div id="heroToken"><svg viewBox="0 0 200 200"></svg></div>
+          </div>
+        </div>
+
+        <canvas id="fx"></canvas>
+
+        <div id="bokehFront"></div>
+        <div id="vignette" data-layout-ignore></div>
+
+        <div id="hud">
+          <div class="corner c-tl"></div><div class="corner c-tr"></div><div class="corner c-bl"></div><div class="corner c-br"></div>
+          <div id="hudBrand"></div>
+          <div id="timecode"><i id="rec"></i><span id="tc">00:00:00:00</span></div>
+          <div id="meter"><span id="meterTxt">READY</span></div>
+          <div id="captions">
+            <div class="cap" id="cap0"><small>&mdash;</small><div class="ln"><span></span></div></div>
+            <div class="cap" id="cap1"><small>&mdash;</small><div class="ln"><span></span></div></div>
+          </div>
+        </div>
+
+        <div id="lockup">
+          <div id="mark"><svg viewBox="0 0 200 200"></svg></div>
+          <div id="wmClip"><div id="wordmark"></div></div>
+          <div id="tagline"></div>
+          <div id="url"></div>
+        </div>
+
+        <div id="grain" data-layout-ignore></div>
+      </div>
+
+      <!-- BGM mounts here as <audio id="bgm">, right before SFX:BEGIN (references/sound.md §6) -->
+      <!-- SFX:BEGIN -->
+      <!-- SFX:END -->
+    </div>
+
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/engine/ot-core.js"></script>
+    <script src="assets/engine/ot-camera.js"></script>
+    <script src="assets/engine/ot-fx.js"></script>
+    <script src="assets/engine/ot-3d.js"></script>
+    <script src="assets/engine/ot-atmos.js"></script>
+    <script src="assets/engine/ot-backdrop.js"></script>
+    <script src="assets/engine/ot-hud.js"></script>
+    <script src="assets/engine/ot-lockup.js"></script>
+    <script src="assets/logo/logo.js"></script>
+    <script src="assets/brand/brand.js"></script>
+    <script src="assets/brand/acts.js"></script>
+    <script>
+      // OT.boot() already performs this registration internally (ot-core.js); it is repeated here,
+      // textually, only because HyperFrames' static contract guard scans index.html's own inline
+      // script content for `window.__timelines` and does not resolve external <script src> files.
+      window.__timelines = window.__timelines || {};
+      OT.boot({
+        fonts: ['700 84px "Geist"', '400 17px "Geist Mono"'],
+        onMissingFont: "throw",
+        setup: setup,
+        build: build,
+        render: render,
+      }).then(function () {
+        window.__timelines["main"] = OT.tl;
+      });
+    </script>
+  </body>
+</html>
